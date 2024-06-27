@@ -4,8 +4,8 @@ setup.py
 MediaManager.egg-info/PKG-INFO
 MediaManager.egg-info/SOURCES.txt
 MediaManager.egg-info/dependency_links.txt
-MediaManager.egg-info/entry_points.txt
 MediaManager.egg-info/top_level.txt
+bin/mediamanager
 mediamanager/__init__.py
 mediamanager/core.py
 mediamanager/geo.py

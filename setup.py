@@ -6,11 +6,9 @@ setup(
     packages=find_packages(),
     long_description=open('README.md').read(),
     long_description_content_type='text/markdown',
-    entry_points={
-        'console_scripts': [
-            'mediamanager=mediapackage.core:main',
-        ],
-    },
+    scripts=[
+        'bin/mediamanager'
+    ],
     author='Ed Salisbury',
     author_email='ed.salisbury@gmail.com',
     description='A tool for managing photo and video files.',
