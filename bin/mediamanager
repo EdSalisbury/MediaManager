@@ -1,0 +1,124 @@
+#!/usr/bin/env python
+ 
+import argparse
+from datetime import datetime
+import logging
+import os
+from mediamanager import MediaManager
+import colorama
+from colorama import Fore, Style
+
+
+
+def setup_logger():
+    """
+    Set up the logger to write to a file with rotation and also log INFO and higher messages to the console.
+
+    :param log_file: The path to the log file.
+    :return: Configured logger.
+    """
+    # Create a custom logger
+    logger = logging.getLogger("mediamanager")
+
+    timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+    log_file = f"{os.path.basename(__file__)}_{timestamp}.log"
+    console_log_level = os.getenv('LOG_LEVEL', 'INFO').upper()
+
+    # Set the logging level for the logger itself
+    logger.setLevel(logging.DEBUG)  # Capture all levels, control via handlers
+
+    handler = logging.FileHandler(log_file)
+    handler.setLevel(logging.DEBUG)  # Capture all levels to file
+    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+    handler.setFormatter(formatter)
+
+    # Create a console handler to log INFO and higher messages to the console
+    console_handler = logging.StreamHandler()
+    console_handler.setLevel(console_log_level)  # Log INFO and higher to console
+    console_formatter = logging.Formatter('%(levelname)s - %(message)s')
+    console_handler.setFormatter(console_formatter)
+
+    # Add the handlers to the logger
+    logger.addHandler(handler)
+    logger.addHandler(console_handler)
+
+    return logger
+
+
+def parse_arguments():
+    """
+    Parse command line arguments.
+
+    :return: Namespace with parsed arguments.
+    """
+    parser = argparse.ArgumentParser(description="Manage media.")
+
+    parser.add_argument(
+        '--move-duplicates',
+        action='store_true',
+        help='Move duplicate files to a specified directory.'
+    )
+    parser.add_argument(
+        '--import-files',
+        type=str,
+        help='Path to import media from.'
+    )
+    parser.add_argument(
+        '--max-workers',
+        type=int,
+        default=4,
+        help='Maximum number of worker threads to use for processing files. Default is 4.'
+    )
+
+    return parser.parse_args()
+
+
+logger = setup_logger()
+
+def prompt_for_config():
+    print(f"{Fore.CYAN}Welcome to MediaManager Configuration Setup!{Style.RESET_ALL}")
+    config = {}
+    home_dir = os.path.expanduser("~")
+    default_db_file = os.path.join(home_dir, "mediamanager.gdbm")
+    config['database_file'] = input(f"{Fore.YELLOW}Enter path for database file [{default_db_file}]: {Style.RESET_ALL}")
+    if not config['database_file']:
+        config['database_file'] = default_db_file
+    while not config.get('media_directory', ""):
+        config['media_directory'] = input(f"{Fore.YELLOW}Enter the path to your media directory: {Style.RESET_ALL}")
+        if not os.path.isdir(config.get('media_directory')):
+            print(f"{Fore.RED}Path not found, try again.")
+            config['media_directory'] = ""    
+    while not config.get('duplicate_directory', ""):
+        config['duplicate_directory'] = input(f"{Fore.YELLOW}Enter the path to your duplicate directory: {Style.RESET_ALL}")
+        if not os.path.isdir(config.get('duplicate_directory')):
+            print(f"{Fore.RED}Path not found, try again.")
+            config['duplicate_directory'] = ""   
+    return config
+
+def main():
+    args = parse_arguments()
+
+    colorama.init(autoreset=True)
+    
+    mm = MediaManager()
+    
+    try:
+        mm.load_cfg()
+    except FileNotFoundError:
+        cfg = prompt_for_config()
+        mm.save_cfg(cfg)
+
+    mm.init_db()
+
+    if args.import_files:
+        mm.process_dir(args.import_files, max_workers=args.max_workers, import_files=True)
+    else:
+        mm.process_dir(
+            mm.cfg.get("media_directory"),
+            max_workers=args.max_workers,
+            import_files=False,
+            move_duplicates=args.move_duplicates)
+        
+
+if __name__ == "__main__":
+    main()

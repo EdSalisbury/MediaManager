@@ -1,0 +1,8 @@
+geopy>=2.4.1
+pillow>=10.3.0
+pymediainfo>=6.1.0
+ratelimit>=2.2.1
+Wand>=0.6.13
+xxhash>=3.4.1
+colorama>=0.4.6
+git+https://github.com/EdSalisbury/pylocaldb.git@v1.0.3
